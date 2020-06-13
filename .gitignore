@@ -191,3 +191,7 @@ vignettes/*.pdf
 
 # pkgdown site
 docs/
+
+Dados/
+.DS_Store
+download.wget
