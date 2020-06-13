@@ -38,3 +38,15 @@ def executaSQL_azure(script, username = None, password = None):
         print("Erro de usuário e senha. Por favor, tente novamente! ")
 
 
+def cria_engine():
+    from sqlalchemy import create_engine 
+    import urllib
+    from prompt_toolkit import prompt
+    server = 'coronathon.database.windows.net' 
+    database = 'coronathon'  
+    username = input('Digite o usuário de acesso ao Banco de dados para executar o script: \n-> ')
+    password = prompt('\nDigite a senha de acesso ao Banco de dados para executar o script: \n-> ', is_password=True) 
+    quoted = urllib.parse.quote_plus('DRIVER={ODBC Driver 17 for SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
+    engine = create_engine('mssql+pyodbc:///?odbc_connect={}'.format(quoted))
+    return engine
+
