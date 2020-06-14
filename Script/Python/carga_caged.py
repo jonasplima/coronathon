@@ -70,14 +70,57 @@ caged = caged_201805.append([caged_201806
                             ,caged_201912])
 
 ##================================================================================
+## Filtra somente quem foi admitido 
+##================================================================================ 
+ 
+caged_filtrado = caged.loc[caged['Admitidos/Desligados'] == 1, ['CBO 2002 Ocupação', 'Grau Instrução', 'Município', 'Salário Mensal', 'Ind Portador Defic']]
+
+##================================================================================
+## Ajusta os tipos de variáveis
+##================================================================================ 
+  
+caged_filtrado['CBO 2002 Ocupação'] = caged_filtrado['CBO 2002 Ocupação'].astype(str)
+caged_filtrado['Grau Instrução'] = caged_filtrado['Grau Instrução'].astype(str)
+caged_filtrado['Município'] = caged_filtrado['Município'].astype(str)
+caged_filtrado['Salário Mensal'] = caged_filtrado['Salário Mensal'].map(lambda x: float(str(x).replace(',','.')))
+caged_filtrado['Ind Portador Defic'] = caged_filtrado['Ind Portador Defic'].astype(bool)
+
+##================================================================================
+## Renomeia colunas
+##================================================================================ 
+
+caged_filtrado.rename(columns={'CBO 2002 Ocupação':'CBO', 'Grau Instrução':'GRAU_INSTRUCAO', 'Município':'MUNICIPIO', 'Salário Mensal':'SALARIO', 'Ind Portador Defic':'PORTADOR_DEFICIENCIA'}, inplace=True)
+
+##================================================================================
+## Puxa base para filtro de municípios do Sudeste (treinamento) e Sul (validação)
+##================================================================================ 
+
+# Puxa municipios  
+municipio = pd.read_csv('Dados/CAGED/COD_MUNICIPIO_SUDESTE_E_SUL.csv', sep=';').drop_duplicates()
+
+# renomeia coluna
+municipio.columns = ['municipio']
+
+# Transforma em string
+municipio.municipio = municipio.municipio.astype(str)
+
+# cria um set dos municípios
+municipio = set(municipio.municipio)
+
+##================================================================================
+## Filtra os municípios
+##================================================================================ 
+
+caged_filtrado = caged_filtrado.loc[caged_filtrado['MUNICIPIO'].isin(municipio)]
+
+##================================================================================
 ## Cria engine de carga
 ##================================================================================
 
 engine = cria_engine()
- 
+
 ##================================================================================
 ## Carrega na azure
 ##================================================================================
 
-caged.to_sql('STAGE_CAGED', schema='dbo', con = engine, index=False, if_exists='replace')
-
+caged_filtrado.to_sql('STAGE_CAGED', schema='dbo', con = engine, index=False, if_exists='replace')
