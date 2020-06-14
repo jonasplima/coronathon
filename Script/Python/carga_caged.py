@@ -117,10 +117,11 @@ caged_filtrado = caged_filtrado.loc[caged_filtrado['MUNICIPIO'].isin(municipio)]
 ## Cria engine de carga
 ##================================================================================
 
-engine = cria_engine()
+caged_filtrado.loc[caged_filtrado.GRAU_INSTRUCAO.isin(['2','3','4']), 'GRAU_INSTRUCAO'] = '4'
 
 ##================================================================================
-## Carrega na azure
+## Gera arquivo 
 ##================================================================================
 
-caged_filtrado.to_sql('STAGE_CAGED', schema='dbo', con = engine, index=False, if_exists='replace')
+caged_filtrado.to_csv('Dados/CAGED/STAGE_CAGED.csv', sep=';')
+
