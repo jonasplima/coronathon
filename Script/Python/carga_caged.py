@@ -17,19 +17,9 @@ warnings.simplefilter(action="ignore", category=PendingDeprecationWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 ##================================================================================
-## Carrega bases de CBO
+## Carrega bases do CAGED
 ##================================================================================
-
-# 2018
-caged_201805 = pd.read_csv('Dados/CAGED/2018/CAGEDEST_052018.txt', sep=';', encoding='cp1252')
-caged_201806 = pd.read_csv('Dados/CAGED/2018/CAGEDEST_062018.txt', sep=';', encoding='cp1252')
-caged_201807 = pd.read_csv('Dados/CAGED/2018/CAGEDEST_072018.txt', sep=';', encoding='cp1252')
-caged_201808 = pd.read_csv('Dados/CAGED/2018/CAGEDEST_082018.txt', sep=';', encoding='cp1252')
-caged_201809 = pd.read_csv('Dados/CAGED/2018/CAGEDEST_092018.txt', sep=';', encoding='cp1252')
-caged_201810 = pd.read_csv('Dados/CAGED/2018/CAGEDEST_102018.txt', sep=';', encoding='cp1252')
-caged_201811 = pd.read_csv('Dados/CAGED/2018/CAGEDEST_112018.txt', sep=';', encoding='cp1252')
-caged_201812 = pd.read_csv('Dados/CAGED/2018/CAGEDEST_122018.txt', sep=';', encoding='cp1252')
-
+ 
 # 2019
 caged_201901 = pd.read_csv('Dados/CAGED/2019/CAGEDEST_012019.txt', sep=';', encoding='cp1252')
 caged_201902 = pd.read_csv('Dados/CAGED/2019/CAGEDEST_022019.txt', sep=';', encoding='cp1252')
@@ -48,16 +38,7 @@ caged_201912 = pd.read_csv('Dados/CAGED/2019/CAGEDEST_122019.txt', sep=';', enco
 ## Concatena base da CAGED
 ##================================================================================
 
-
-caged = caged_201805.append([caged_201806
-                            ,caged_201807
-                            ,caged_201808
-                            ,caged_201809
-                            ,caged_201810
-                            ,caged_201811
-                            ,caged_201812
-                            ,caged_201901
-                            ,caged_201902
+caged = caged_201901.append([caged_201902
                             ,caged_201903
                             ,caged_201904
                             ,caged_201905
@@ -90,38 +71,34 @@ caged_filtrado['Ind Portador Defic'] = caged_filtrado['Ind Portador Defic'].asty
 ##================================================================================ 
 
 caged_filtrado.rename(columns={'CBO 2002 Ocupação':'CBO', 'Grau Instrução':'GRAU_INSTRUCAO', 'Município':'MUNICIPIO', 'Salário Mensal':'SALARIO', 'Ind Portador Defic':'PORTADOR_DEFICIENCIA'}, inplace=True)
-
-##================================================================================
-## Puxa base para filtro de municípios do Sudeste (treinamento) e Sul (validação)
-##================================================================================ 
-
-# Puxa municipios  
-municipio = pd.read_csv('Dados/CAGED/COD_MUNICIPIO_SUDESTE_E_SUL.csv', sep=';').drop_duplicates()
-
-# renomeia coluna
-municipio.columns = ['municipio']
-
-# Transforma em string
-municipio.municipio = municipio.municipio.astype(str)
-
-# cria um set dos municípios
-municipio = set(municipio.municipio)
-
+ 
 ##================================================================================
 ## Filtra os municípios
 ##================================================================================ 
+# Puxa municipios  
+municipio = pd.read_csv('Dados/CAGED/CODIGO_MUNICIPIO_SUDESTE_E_SUL.csv', sep=';').drop_duplicates()
 
-caged_filtrado = caged_filtrado.loc[caged_filtrado['MUNICIPIO'].isin(municipio)]
+caged_filtrado = caged_filtrado.loc[caged_filtrado['MUNICIPIO'].isin(municipio.loc[municipio.ESTADO == 'SP', 'CODIGO'].astype(str))]
+
+
+##================================================================================
+## SEPARA AMOSTRA
+##================================================================================ 
+
+amostra = caged_filtrado[['CBO', 'PORTADOR_DEFICIENCIA']].groupby(['CBO']).count().sort_values(by='PORTADOR_DEFICIENCIA', ascending=False).reset_index()
+amostra = amostra.head(30)
+
+caged_filtrado = caged_filtrado.loc[caged_filtrado['CBO'].isin(amostra.CBO.unique())]
 
 ##================================================================================
 ## Cria engine de carga
 ##================================================================================
 
 caged_filtrado.loc[caged_filtrado.GRAU_INSTRUCAO.isin(['2','3','4']), 'GRAU_INSTRUCAO'] = '4'
+caged_filtrado.loc[caged_filtrado.GRAU_INSTRUCAO.isin(['11']), 'GRAU_INSTRUCAO'] = '10'
 
 ##================================================================================
 ## Gera arquivo 
 ##================================================================================
 
-caged_filtrado.to_csv('Dados/CAGED/STAGE_CAGED.csv', sep=';')
-
+caged_filtrado.to_csv('Dados/CAGED/CAGED.csv', sep=';', index=False)
